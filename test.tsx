@@ -16,6 +16,8 @@ export class test extends ViewComponent {
                 <div>
                     Test! A bloo bla is {this.state.abloobla}!
                     <br />
+                    <button onclick={console.log('here')}>Click here</button>
+                    <br />
                     <TitleContent name="Bob Smith" />
                 </div>
             );

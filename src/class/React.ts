@@ -18,6 +18,14 @@ export class ViewComponent {
         this.state = this.mergeInitialState(props, {});
     }
 
+    onEvent(event: string, details: any) {}
+
+    eventDidHappen(event: string, details: any) {
+        if( typeof this.onEvent !== 'undefined' ) {
+            this.onEvent(event, details)
+        }
+    }
+
     public mergeInitialState(props, state): object {
         if(typeof props === 'undefined') return this.getInitialState();
         // merge two object sets    
