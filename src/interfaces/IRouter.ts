@@ -8,4 +8,5 @@ export interface IRouter {
     setRoutes(RouteList: IRouteList): boolean;
     setCurrentPath(path: string);
     routeChangeEvent(): boolean;
+    constructor(EventWatcher: EventWatcher);
 }

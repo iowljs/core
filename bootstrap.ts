@@ -3,6 +3,7 @@
  */
 import { DOMNode } from './src/models/DOMNode'
 import { Router } from './src/router/router'
+import { State } from './src/class/State'
 
 /**
  * Import Interfaces
@@ -15,16 +16,21 @@ import { IRenderEngine } from './src/interfaces/IRenderEngine'
  * TEST CLASSES
  */
 import { test } from './test'
+import { EventWatcher } from './src/class/EventWatcher';
 
 /**
  * Export OwlApp class
  */
 export class OwlApp implements IOwlApplication {
-    appDetails: IAppDetails;
-    router: Router;
+    public appDetails: IAppDetails;
+    public router: Router;
+    public state: State;
+    public EventWatcher: EventWatcher;
 
     constructor(appDetails: IAppDetails) {
-        this.router = new Router;
+        this.EventWatcher = new EventWatcher();
+        this.state = new State(this.EventWatcher)
+        this.router = new Router(this.EventWatcher);
         this.create(appDetails)
         this.setup()
     }

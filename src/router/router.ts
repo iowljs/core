@@ -8,6 +8,10 @@ export class Router implements IRouter {
     public currentPath: string;
     public EventWatcher: EventWatcher;
 
+    constructor(EventWatcher: EventWatcher) {
+        this.EventWatcher = EventWatcher;
+    }
+
     public setCurrentPath(path: string) {
         this.currentPath = path;
     }
