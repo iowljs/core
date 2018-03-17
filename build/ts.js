@@ -154,6 +154,11 @@ var ViewComponent = /** @class */ (function () {
         this.state = handler(this.state);
         return this.state;
     };
+    ViewComponent.prototype.rerender = function (target) {
+        var node = target;
+        var innerHTML = node.innerHTML;
+        console.log(innerHTML);
+    };
     ViewComponent.prototype.render = function () {
         throw new ReferenceError("You must define your own render functions");
     };
@@ -339,19 +344,35 @@ function TitleContent(_a) {
 var test = /** @class */ (function (_super) {
     __extends(test, _super);
     function test() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.hasDonePreinit = false;
+        return _this;
     }
     test.prototype.setBla = function () {
         this.state.abloobla = 'Smith, Bob';
     };
-    test.prototype.render = function () {
+    test.prototype.setBlaMessage = function (message) {
+        this.state.blamessage = message || 'Click here';
+    };
+    test.prototype.preinit = function () {
+        if (this.hasDonePreinit)
+            return;
         this.setBla();
-        return (React_1.React.createElement("div", null,
+        this.setBlaMessage();
+        this.hasDonePreinit = true;
+    };
+    test.prototype.doTest = function (e) {
+        var target = e.target;
+        target.innerHTML = this.state.blamessage;
+    };
+    test.prototype.render = function () {
+        this.preinit();
+        return (React_1.React.createElement("div", { "data-root": true },
             "Test! A bloo bla is ",
             this.state.abloobla,
             "!",
             React_1.React.createElement("br", null),
-            React_1.React.createElement("button", { onclick: console.log('here') }, "Click here"),
+            React_1.React.createElement("button", { onClick: this.doTest }, this.state.blamessage),
             React_1.React.createElement("br", null),
             React_1.React.createElement(TitleContent, { name: "Bob Smith" })));
     };

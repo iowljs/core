@@ -52,6 +52,12 @@ export class ViewComponent {
         return this.state;
     }
 
+    public rerender(target) {
+        var node = target
+        var innerHTML = node.innerHTML
+        console.log(innerHTML)
+    }
+
     public render() {
         throw new ReferenceError(`You must define your own render functions`);
     }

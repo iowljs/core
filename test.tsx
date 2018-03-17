@@ -7,16 +7,35 @@ function TitleContent({ name = '' } = {}) {
 } 
 
 export class test extends ViewComponent {
+    public hasDonePreinit: boolean = false;
+
     setBla() {
         this.state.abloobla = 'Smith, Bob';
     }
-    render() {
+
+    setBlaMessage(message?: string) {
+        this.state.blamessage = message || 'Click here'
+    }
+    
+    preinit() {
+        if ( this.hasDonePreinit ) return
         this.setBla()
+        this.setBlaMessage()
+        this.hasDonePreinit = true
+    }
+
+    doTest(e) {
+        var target = e.target
+        target.innerHTML = this.state.blamessage
+    }
+
+    render() {
+        this.preinit()
         return (
-                <div>
+                <div data-root>
                     Test! A bloo bla is {this.state.abloobla}!
                     <br />
-                    <button onClick={console.log('here')}>Click here</button>
+                    <button onClick={this.doTest}>{this.state.blamessage}</button>
                     <br />
                     <TitleContent name="Bob Smith" />
                 </div>
