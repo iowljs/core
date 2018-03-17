@@ -6,7 +6,6 @@ var State_1 = require("./src/class/State");
 /**
  * TEST CLASSES
  */
-var test_1 = require("./test");
 var EventWatcher_1 = require("./src/class/EventWatcher");
 /**
  * Export OwlApp class
@@ -56,14 +55,15 @@ var OwlApp = /** @class */ (function () {
     return OwlApp;
 }());
 exports.OwlApp = OwlApp;
-var testapp = new OwlApp({
+var test_1 = require("./test");
+new OwlApp({
     name: test_1.test,
     selector: 'body',
     debugMode: false,
-    version: '1.0.1-dev'
+    version: '1.0.1-dev' // version code, optional
 });
 
-},{"./src/class/EventWatcher":2,"./src/class/State":4,"./src/router/router":5,"./test":6}],2:[function(require,module,exports){
+},{"./src/class/EventWatcher":2,"./src/class/State":4,"./src/router/router":6,"./test":7}],2:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
 var EventWatcher = /** @class */ (function () {
@@ -125,6 +125,7 @@ var ViewComponent = /** @class */ (function () {
         this.state = this.mergeInitialState(props, {});
     }
     ViewComponent.prototype.onEvent = function (event, details) { };
+    ViewComponent.prototype.onUpdate = function (state) { };
     ViewComponent.prototype.eventDidHappen = function (event, details) {
         if (typeof this.onEvent !== 'undefined') {
             this.onEvent(event, details);
@@ -149,9 +150,15 @@ var ViewComponent = /** @class */ (function () {
     ViewComponent.prototype.setState = function (handler) {
         if (typeof handler !== 'function') {
             this.state = __assign({}, this.state, handler);
+            if (typeof this.onUpdate !== 'undefined') {
+                this.onUpdate(this.state);
+            }
             return this.state;
         }
         this.state = handler(this.state);
+        if (typeof this.onUpdate !== 'undefined') {
+            this.onUpdate(this.state);
+        }
         return this.state;
     };
     ViewComponent.prototype.rerender = function (target) {
@@ -274,6 +281,19 @@ exports.State = State;
 },{}],5:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
+function render(element, target) {
+    if (typeof target === 'undefined') {
+        target = document.body;
+    }
+    target.innerHTML = '';
+    target.appendChild(element);
+    return target;
+}
+exports.render = render;
+
+},{}],6:[function(require,module,exports){
+"use strict";
+exports.__esModule = true;
 var Router = /** @class */ (function () {
     function Router(EventWatcher) {
         this.EventWatcher = EventWatcher;
@@ -321,7 +341,7 @@ var Router = /** @class */ (function () {
 }());
 exports.Router = Router;
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -335,6 +355,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 exports.__esModule = true;
 var React_1 = require("./src/class/React");
+var render_1 = require("./src/globals/render");
 function TitleContent(_a) {
     var _b = (_a === void 0 ? {} : _a).name, name = _b === void 0 ? '' : _b;
     return (React_1.React.createElement("span", null,
@@ -343,9 +364,10 @@ function TitleContent(_a) {
 }
 var test = /** @class */ (function (_super) {
     __extends(test, _super);
-    function test() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
+    function test(props) {
+        var _this = _super.call(this, props) || this;
         _this.hasDonePreinit = false;
+        _this.doTest = _this.doTest.bind(_this);
         return _this;
     }
     test.prototype.setBla = function () {
@@ -361,13 +383,17 @@ var test = /** @class */ (function (_super) {
         this.setBlaMessage();
         this.hasDonePreinit = true;
     };
+    test.prototype.onUpdate = function (state) {
+        render_1.render(this.render(), this.el);
+    };
     test.prototype.doTest = function (e) {
         var target = e.target;
-        target.innerHTML = 'test';
+        //target.innerHTML = 'test'
+        this.setState(function (state) { return ({ blamessage: 'test' }); });
     };
     test.prototype.render = function () {
         this.preinit();
-        return (React_1.React.createElement("div", { "data-root": true },
+        this.el = (React_1.React.createElement("div", { "data-root": true },
             "Test! A bloo bla is ",
             this.state.abloobla,
             "!",
@@ -375,9 +401,10 @@ var test = /** @class */ (function (_super) {
             React_1.React.createElement("button", { onClick: this.doTest }, this.state.blamessage),
             React_1.React.createElement("br", null),
             React_1.React.createElement(TitleContent, { name: "Bob Smith" })));
+        return this.el;
     };
     return test;
 }(React_1.ViewComponent));
 exports.test = test;
 
-},{"./src/class/React":3}]},{},[1]);
+},{"./src/class/React":3,"./src/globals/render":5}]},{},[1]);

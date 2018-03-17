@@ -19,6 +19,7 @@ export class ViewComponent {
     }
 
     onEvent(event: string, details: any) {}
+    onUpdate(state: any): any {}
 
     eventDidHappen(event: string, details: any) {
         if( typeof this.onEvent !== 'undefined' ) {
@@ -46,9 +47,15 @@ export class ViewComponent {
     public setState(handler) {
         if(typeof handler !== 'function') {
             this.state = { ...this.state, ...handler }
+            if(typeof this.onUpdate !== 'undefined') {
+                this.onUpdate(this.state)
+            }
             return this.state;
         }
         this.state = handler(this.state);
+        if(typeof this.onUpdate !== 'undefined') {
+            this.onUpdate(this.state)
+        }
         return this.state;
     }
 
