@@ -26,7 +26,7 @@ export class test extends ViewComponent {
 
     doTest(e) {
         var target = e.target
-        target.innerHTML = this.state.blamessage
+        target.innerHTML = 'test'
     }
 
     render() {

@@ -15,7 +15,6 @@ import { IRenderEngine } from './src/interfaces/IRenderEngine'
 /**
  * TEST CLASSES
  */
-import { test } from './test'
 import { EventWatcher } from './src/class/EventWatcher';
 
 /**
@@ -75,10 +74,3 @@ export class OwlApp implements IOwlApplication {
             )
     }
 }
-
-let testapp = new OwlApp({
-    name: test,
-    selector: 'body',
-    debugMode: false,
-    version: '1.0.1-dev'
-})

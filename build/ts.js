@@ -363,7 +363,7 @@ var test = /** @class */ (function (_super) {
     };
     test.prototype.doTest = function (e) {
         var target = e.target;
-        target.innerHTML = this.state.blamessage;
+        target.innerHTML = 'test';
     };
     test.prototype.render = function () {
         this.preinit();
