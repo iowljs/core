@@ -75,3 +75,10 @@ export class OwlApp implements IOwlApplication {
             )
     }
 }
+
+let testapp = new OwlApp({
+    name: test,
+    selector: 'body',
+    debugMode: false,
+    version: '1.0.1-dev'
+})

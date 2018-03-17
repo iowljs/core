@@ -2,16 +2,20 @@
 "use strict";
 exports.__esModule = true;
 var router_1 = require("./src/router/router");
+var State_1 = require("./src/class/State");
 /**
  * TEST CLASSES
  */
 var test_1 = require("./test");
+var EventWatcher_1 = require("./src/class/EventWatcher");
 /**
  * Export OwlApp class
  */
 var OwlApp = /** @class */ (function () {
     function OwlApp(appDetails) {
-        this.router = new router_1.Router;
+        this.EventWatcher = new EventWatcher_1.EventWatcher();
+        this.state = new State_1.State(this.EventWatcher);
+        this.router = new router_1.Router(this.EventWatcher);
         this.create(appDetails);
         this.setup();
     }
@@ -33,15 +37,73 @@ var OwlApp = /** @class */ (function () {
     /**
      * Setup the actual application now, trigger default render
      */
-    OwlApp.prototype.setup = function () { };
+    OwlApp.prototype.setup = function () {
+        if (this.appDetails.debugMode) {
+            console.log("/----------------\\");
+            console.log("/---- Owl.js ----\\");
+            console.log("/----------------\\");
+            console.log("Version " + (this.appDetails.version || '1'));
+        }
+        this.render();
+    };
+    OwlApp.prototype.render = function () {
+        var selector = this.appDetails.selector;
+        var appcls = this.appDetails.name;
+        var app = new appcls({});
+        document.querySelector(selector)
+            .appendChild(app.render());
+    };
     return OwlApp;
 }());
 exports.OwlApp = OwlApp;
-/** Simple JSx Test */
-var t = new test_1.test({});
-document.body.appendChild(t.render());
+var testapp = new OwlApp({
+    name: test_1.test,
+    selector: 'body',
+    debugMode: false,
+    version: '1.0.1-dev'
+});
 
-},{"./src/router/router":3,"./test":4}],2:[function(require,module,exports){
+},{"./src/class/EventWatcher":2,"./src/class/State":4,"./src/router/router":5,"./test":6}],2:[function(require,module,exports){
+"use strict";
+exports.__esModule = true;
+var EventWatcher = /** @class */ (function () {
+    function EventWatcher() {
+        this.events = [];
+    }
+    /**
+     * triggerEvent will trigger an event
+     * @param name The event name, matches the "trigger" column in IEvent (Array<IEvent>)
+     * @param details The details to supply to the closure
+     */
+    EventWatcher.prototype.triggerEvent = function (name, details) {
+        var event_did_fire_at_least_once = false;
+        var events = this.events;
+        var self = this;
+        events.forEach(function (event) {
+            if (event.trigger === name) {
+                event.closure(name, details);
+                event_did_fire_at_least_once = true;
+            }
+        }.bind(self, event_did_fire_at_least_once, name, details));
+        return event_did_fire_at_least_once;
+    };
+    /**
+     * addEventTrigger will push an event trigger onto the events stack
+     * @param trigger The event trigger string, ie router.routeChange
+     * @param closure The class handler to trigger when this event fires
+     */
+    EventWatcher.prototype.addEventTrigger = function (trigger, closure) {
+        this.events.push({
+            trigger: trigger,
+            closure: closure
+        });
+        return true;
+    };
+    return EventWatcher;
+}());
+exports.EventWatcher = EventWatcher;
+
+},{}],3:[function(require,module,exports){
 "use strict";
 var __assign = (this && this.__assign) || Object.assign || function(t) {
     for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -62,6 +124,12 @@ var ViewComponent = /** @class */ (function () {
     function ViewComponent(props) {
         this.state = this.mergeInitialState(props, {});
     }
+    ViewComponent.prototype.onEvent = function (event, details) { };
+    ViewComponent.prototype.eventDidHappen = function (event, details) {
+        if (typeof this.onEvent !== 'undefined') {
+            this.onEvent(event, details);
+        }
+    };
     ViewComponent.prototype.mergeInitialState = function (props, state) {
         if (typeof props === 'undefined')
             return this.getInitialState();
@@ -145,11 +213,65 @@ var React = /** @class */ (function () {
 }());
 exports.React = React;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
+"use strict";
+exports.__esModule = true;
+var State = /** @class */ (function () {
+    /**
+     * @param EventWatcher EventWatcher class, from Bootstrap
+     */
+    function State(EventWatcher) {
+        this.EventWatcher = EventWatcher;
+    }
+    /**
+     * @param key Key to search from state
+     */
+    State.prototype.getState = function (key) {
+        var state = this.state;
+        var state_result = null;
+        state.forEach(function (state_object) {
+            if (state_object.name === key) {
+                state_result = state_object.value;
+            }
+        }.bind(key, state_result));
+        return state_result;
+    };
+    /**
+     * @param key The key to update
+     * @param value The new value to assign
+     */
+    State.prototype.updateState = function (key, value) {
+        var state = this.state;
+        state.forEach(function (state_object) {
+            if (state_object.name === key) {
+                state_object.value = value;
+            }
+        });
+        return false;
+    };
+    /**
+     * @param key The key to assign
+     * @param value The value to assign for the key
+     */
+    State.prototype.setState = function (key, value) {
+        if (!this.updateState(key, value)) {
+            this.state.push({
+                name: key,
+                value: value
+            });
+        }
+        return true;
+    };
+    return State;
+}());
+exports.State = State;
+
+},{}],5:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
 var Router = /** @class */ (function () {
-    function Router() {
+    function Router(EventWatcher) {
+        this.EventWatcher = EventWatcher;
     }
     Router.prototype.setCurrentPath = function (path) {
         this.currentPath = path;
@@ -194,7 +316,7 @@ var Router = /** @class */ (function () {
 }());
 exports.Router = Router;
 
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -220,19 +342,21 @@ var test = /** @class */ (function (_super) {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     test.prototype.setBla = function () {
-        this.state.abloobla = 'Marissa';
+        this.state.abloobla = 'Smith, Bob';
     };
     test.prototype.render = function () {
         this.setBla();
         return (React_1.React.createElement("div", null,
-            "Test! Hi ",
+            "Test! A bloo bla is ",
             this.state.abloobla,
             "!",
             React_1.React.createElement("br", null),
-            React_1.React.createElement(TitleContent, { name: "Curtis Gervais" })));
+            React_1.React.createElement("button", { onclick: console.log('here') }, "Click here"),
+            React_1.React.createElement("br", null),
+            React_1.React.createElement(TitleContent, { name: "Bob Smith" })));
     };
     return test;
 }(React_1.ViewComponent));
 exports.test = test;
 
-},{"./src/class/React":2}]},{},[1]);
+},{"./src/class/React":3}]},{},[1]);
