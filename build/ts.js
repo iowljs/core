@@ -56,15 +56,31 @@ var OwlApp = /** @class */ (function () {
     return OwlApp;
 }());
 exports.OwlApp = OwlApp;
-var test_1 = require("./test");
-new OwlApp({
+
+},{"./src/class/EventWatcher":3,"./src/class/State":5,"./src/router/router":7}],2:[function(require,module,exports){
+"use strict";
+exports.__esModule = true;
+//---- Import OwlApp ----\\
+var bootstrap_1 = require("./bootstrap");
+//---- Import Components ----\\
+var test_1 = require("./views/test");
+//---- Starter Kit ----\\
+// In here we'll create a simple OwlApp
+// We use the selector of 'body'
+// We use the test.tsx class in the views folder
+// We set debug mode to false
+// We define a version number, this is optional
+// We can replace this by adding views of your own
+//---- BEGIN APPLICATION ----\\
+new bootstrap_1.OwlApp({
     name: test_1.test,
     selector: 'body',
     debugMode: false,
     version: '1.0.1-dev' // version code, optional
 });
+//---- END APPLICATION ----\\
 
-},{"./src/class/EventWatcher":2,"./src/class/State":4,"./src/router/router":6,"./test":7}],2:[function(require,module,exports){
+},{"./bootstrap":1,"./views/test":8}],3:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
 var EventWatcher = /** @class */ (function () {
@@ -104,7 +120,7 @@ var EventWatcher = /** @class */ (function () {
 }());
 exports.EventWatcher = EventWatcher;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 var __assign = (this && this.__assign) || Object.assign || function(t) {
     for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -228,7 +244,7 @@ var React = /** @class */ (function () {
 }());
 exports.React = React;
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
 var State = /** @class */ (function () {
@@ -281,7 +297,7 @@ var State = /** @class */ (function () {
 }());
 exports.State = State;
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
 var DOMNode = /** @class */ (function () {
@@ -348,7 +364,7 @@ var DOMNode = /** @class */ (function () {
 }());
 exports.DOMNode = DOMNode;
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
 var Router = /** @class */ (function () {
@@ -417,7 +433,7 @@ var Router = /** @class */ (function () {
 }());
 exports.Router = Router;
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -430,8 +446,8 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 exports.__esModule = true;
-var React_1 = require("./src/class/React");
-var DOMNode_1 = require("./src/models/DOMNode");
+var React_1 = require("../src/class/React");
+var DOMNode_1 = require("../src/models/DOMNode");
 function TitleContent(_a) {
     var _b = (_a === void 0 ? {} : _a).name, name = _b === void 0 ? '' : _b;
     return (React_1.React.createElement("span", null,
@@ -493,4 +509,4 @@ var test = /** @class */ (function (_super) {
 }(React_1.ViewComponent));
 exports.test = test;
 
-},{"./src/class/React":3,"./src/models/DOMNode":5}]},{},[1]);
+},{"../src/class/React":4,"../src/models/DOMNode":6}]},{},[2]);

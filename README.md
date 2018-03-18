@@ -83,7 +83,7 @@ gulp.task('compile', () => {
     return browserify({
         basedir: '.',
         debug: false,
-        entries: ['bootstrap.ts'], // change this to "index.ts" for building an individual app, not the core library
+        entries: ['index.ts'], // change this to "bootstrap.ts" for packaging the core, not the example library included
         cache: {},
         packageCache: {}
     })

@@ -9,7 +9,7 @@ gulp.task('compile', () => {
     return browserify({
         basedir: '.',
         debug: false,
-        entries: ['bootstrap.ts'],
+        entries: ['index.ts'],
         cache: {},
         packageCache: {}
     })
