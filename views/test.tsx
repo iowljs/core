@@ -48,7 +48,6 @@ export class test extends ViewComponent {
 
     doTest(e) {
         var target = new DOMNode(e.target)
-        //target.innerHTML = 'test'
         this.setState(state => ({ blamessage: this.makeId() }))
         target.changeHTML(this.state.blamessage)
     }

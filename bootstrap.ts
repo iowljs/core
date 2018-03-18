@@ -70,6 +70,7 @@ export class OwlApp implements IOwlApplication {
         var selector = this.appDetails.selector;
         let appcls = this.appDetails.name;
         let app = new appcls({});
+        app.selector = document.querySelector(selector)
         document.querySelector(selector)
             .appendChild(
                 app.render()
