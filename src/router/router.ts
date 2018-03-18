@@ -7,6 +7,7 @@ export class Router implements IRouter {
     public routeList: IRouteList;
     public currentPath: string;
     public EventWatcher: EventWatcher;
+    public coreSelector: any;
 
     constructor(EventWatcher: EventWatcher) {
         this.EventWatcher = EventWatcher;
@@ -23,6 +24,10 @@ export class Router implements IRouter {
     public setRoutes(RouteList: IRouteList): boolean {
         this.routeList = RouteList
         return true
+    }
+
+    public bindHashChanges() {
+        document.addEventListener('hashchange', this.routeChangeEvent.bind(this))
     }
 
     /**
@@ -43,15 +48,28 @@ export class Router implements IRouter {
         routes.forEach(function (route) {
             var path = route.path
             if(path === controller) {
-                route.closure(
-                    method,
-                    data
-                )
                 EventWatcher.triggerEvent('router.routeChange', {
                     controller: controller,
                     method: method,
                     data: data
                 })
+                var closure = route.closure
+                if (typeof closure.eventDidHappen === 'undefined') {
+                    route.closure = new route.closure({
+                        method: method,
+                        data: data
+                    })
+                    closure = route.closure
+                    closure.EventWatcher = this.EventWatcher
+                    var html = closure.render() // "*classname*.render()"
+                    this.coreSelector.innerHTML = ""
+                    this.coreSelector.appendChild(html)
+                    EventWatcher.triggerEvent('controller.didChange', {
+                        controller: controller,
+                        method: method,
+                        data: data
+                    })
+                }
             }
         }.bind(controller, method, data, EventWatcher))
         return true

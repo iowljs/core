@@ -33,6 +33,7 @@ export class OwlApp implements IOwlApplication {
         this.router = new Router(this.EventWatcher);
         this.create(appDetails)
         this.setup()
+        this.router.bindHashChanges()
     }
     
     /**

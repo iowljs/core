@@ -73,3 +73,32 @@ new OwlApp({
     version: '1.0.1-dev' // version code, optional
 })
 ```
+
+## Building
+
+Right now, we're using a flat gulp file to build, here's the jist on how to compile the source tree down:
+
+```javascript
+gulp.task('compile', () => {
+    return browserify({
+        basedir: '.',
+        debug: false,
+        entries: ['bootstrap.ts'], // change this to "index.ts" for building an individual app, not the core library
+        cache: {},
+        packageCache: {}
+    })
+    .plugin(tsify, {
+       target: "es3",
+       noImplicitAny: false,
+       surpressImplicityAnyIndexErrors: false,
+       jsx: "react" // our custom react-compatible engine is included in the source tree
+    })
+    .bundle() // create bundle
+    .pipe(source('ts.js')) // pipe it as ts.js
+    .pipe(gulp.dest('build')) // pipe to build directory, as build/ts.js
+})
+```
+
+Then run:
+
+```gulp compile``` and you're off to the races. Note, all view files must be using the tsx extension.

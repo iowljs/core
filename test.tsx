@@ -1,5 +1,6 @@
 import { React, ViewComponent } from './src/class/React'
 import { render } from './src/globals/render'
+import { DOMNode } from './src/models/DOMNode'
 
 function TitleContent({ name = '' } = {}) {
     return (
@@ -13,7 +14,7 @@ export class test extends ViewComponent {
 	
     constructor(props) {
     	super(props);
-	    this.doTest = this.doTest.bind(this)
+        this.doTest = this.doTest.bind(this)
     }
     setBla() {
         this.state.abloobla = 'Smith, Bob';
@@ -30,12 +31,26 @@ export class test extends ViewComponent {
         this.hasDonePreinit = true
     }
 
+    makeId() {
+        function makeid() {
+            var text = "";
+            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+          
+            for (var i = 0; i < 15; i++)
+              text += possible.charAt(Math.floor(Math.random() * possible.length));
+          
+            return text;
+        }
+        return makeid()
+    }
+
     onUpdate(state) {}
 
     doTest(e) {
-        var target = e.target
+        var target = new DOMNode(e.target)
         //target.innerHTML = 'test'
-	    this.setState(state => ({ blamessage: 'test' }))
+        this.setState(state => ({ blamessage: this.makeId() }))
+        target.changeHTML(this.state.blamessage)
     }
 
     render() {

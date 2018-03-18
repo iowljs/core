@@ -17,6 +17,7 @@ var OwlApp = /** @class */ (function () {
         this.router = new router_1.Router(this.EventWatcher);
         this.create(appDetails);
         this.setup();
+        this.router.bindHashChanges();
     }
     /**
      * Create an application
@@ -123,6 +124,9 @@ function ObjectEntries(obj) {
 var ViewComponent = /** @class */ (function () {
     function ViewComponent(props) {
         this.state = this.mergeInitialState(props, {});
+        this.onUpdate = this.onUpdate.bind(this);
+        this.onEvent = this.onEvent.bind(this);
+        this.eventDidHappen = this.eventDidHappen.bind(this);
     }
     ViewComponent.prototype.onEvent = function (event, details) { };
     ViewComponent.prototype.onUpdate = function (state) { };
@@ -161,10 +165,9 @@ var ViewComponent = /** @class */ (function () {
         }
         return this.state;
     };
-    ViewComponent.prototype.rerender = function (target) {
-        var node = target;
-        var innerHTML = node.innerHTML;
-        console.log(innerHTML);
+    ViewComponent.prototype.prerender = function () {
+        this.EventWatcher.addEventTrigger('controller.didChange', this.onEvent.bind(this));
+        this.EventWatcher.addEventTrigger('router.routeChange', this.onEvent.bind(this));
     };
     ViewComponent.prototype.render = function () {
         throw new ReferenceError("You must define your own render functions");
@@ -281,15 +284,69 @@ exports.State = State;
 },{}],5:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
-function render(element, target) {
-    if (typeof target === 'undefined') {
-        target = document.body;
+var DOMNode = /** @class */ (function () {
+    function DOMNode(node) {
+        this.node = node;
     }
-    target.innerHTML = '';
-    target.appendChild(element);
-    return target;
-}
-exports.render = render;
+    /**
+     * @var selfHasNode void
+     */
+    DOMNode.prototype.selfHasNode = function () {
+        return typeof this.node !== 'undefined';
+    };
+    /**
+     * Change the text content of a selector node
+     * @var changeText void
+     * @param newText The new text to assign to the node
+     */
+    DOMNode.prototype.changeText = function (newText) {
+        if (this.selfHasNode()) {
+            this.node.innerText = newText;
+            return true;
+        }
+        return false;
+    };
+    /**
+     * Change the HTML content
+     * @param newHTML The HTML content to replace the existing with
+     */
+    DOMNode.prototype.changeHTML = function (newHTML) {
+        if (this.selfHasNode()) {
+            this.node.innerHTML = newHTML;
+            return true;
+        }
+        return false;
+    };
+    /**
+     * This accepts a className as a string, returns boolean
+     * @param className The class name to add to the selector
+     */
+    DOMNode.prototype.addClass = function (className) {
+        if (this.selfHasNode()) {
+            this.node.classList.add(className);
+            return true;
+        }
+        return false;
+    };
+    /**
+     * Hide accepts an optional parameter, called show, defaults to false (hide)
+     * @param show Should we show this selector?
+     */
+    DOMNode.prototype.hide = function (show) {
+        if (show === void 0) { show = false; }
+        if (show && this.selfHasNode()) {
+            this.node.classList.remove('owl-hide');
+            return true;
+        }
+        else if (!show && this.selfHasNode()) {
+            this.node.classList.add('owl-hide');
+            return false;
+        }
+        return false;
+    };
+    return DOMNode;
+}());
+exports.DOMNode = DOMNode;
 
 },{}],6:[function(require,module,exports){
 "use strict";
@@ -309,6 +366,9 @@ var Router = /** @class */ (function () {
         this.routeList = RouteList;
         return true;
     };
+    Router.prototype.bindHashChanges = function () {
+        document.addEventListener('hashchange', this.routeChangeEvent.bind(this));
+    };
     /**
      * routeChangeEvent will trigger on hash change event on dom document
      */
@@ -327,12 +387,28 @@ var Router = /** @class */ (function () {
         routes.forEach(function (route) {
             var path = route.path;
             if (path === controller) {
-                route.closure(method, data);
                 EventWatcher.triggerEvent('router.routeChange', {
                     controller: controller,
                     method: method,
                     data: data
                 });
+                var closure = route.closure;
+                if (typeof closure.eventDidHappen === 'undefined') {
+                    route.closure = new route.closure({
+                        method: method,
+                        data: data
+                    });
+                    closure = route.closure;
+                    closure.EventWatcher = this.EventWatcher;
+                    var html = closure.render(); // "*classname*.render()"
+                    this.coreSelector.innerHTML = "";
+                    this.coreSelector.appendChild(html);
+                    EventWatcher.triggerEvent('controller.didChange', {
+                        controller: controller,
+                        method: method,
+                        data: data
+                    });
+                }
             }
         }.bind(controller, method, data, EventWatcher));
         return true;
@@ -355,7 +431,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 exports.__esModule = true;
 var React_1 = require("./src/class/React");
-var render_1 = require("./src/globals/render");
+var DOMNode_1 = require("./src/models/DOMNode");
 function TitleContent(_a) {
     var _b = (_a === void 0 ? {} : _a).name, name = _b === void 0 ? '' : _b;
     return (React_1.React.createElement("span", null,
@@ -383,13 +459,23 @@ var test = /** @class */ (function (_super) {
         this.setBlaMessage();
         this.hasDonePreinit = true;
     };
-    test.prototype.onUpdate = function (state) {
-        render_1.render(this.render(), this.el);
+    test.prototype.makeId = function () {
+        function makeid() {
+            var text = "";
+            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            for (var i = 0; i < 15; i++)
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+            return text;
+        }
+        return makeid();
     };
+    test.prototype.onUpdate = function (state) { };
     test.prototype.doTest = function (e) {
-        var target = e.target;
+        var _this = this;
+        var target = new DOMNode_1.DOMNode(e.target);
         //target.innerHTML = 'test'
-        this.setState(function (state) { return ({ blamessage: 'test' }); });
+        this.setState(function (state) { return ({ blamessage: _this.makeId() }); });
+        target.changeHTML(this.state.blamessage);
     };
     test.prototype.render = function () {
         this.preinit();
@@ -407,4 +493,4 @@ var test = /** @class */ (function (_super) {
 }(React_1.ViewComponent));
 exports.test = test;
 
-},{"./src/class/React":3,"./src/globals/render":5}]},{},[1]);
+},{"./src/class/React":3,"./src/models/DOMNode":5}]},{},[1]);
