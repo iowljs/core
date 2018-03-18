@@ -76,11 +76,3 @@ export class OwlApp implements IOwlApplication {
             )
     }
 }
-
-import { test } from './test'
-new OwlApp({
-    name: test, // direct component
-    selector: 'body', // selector tag, ie 'body' or '#app'
-    debugMode: false, // enable for simple output in logs
-    version: '1.0.1-dev' // version code, optional
-})

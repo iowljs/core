@@ -1,6 +1,6 @@
-import { React, ViewComponent } from './src/class/React'
-import { render } from './src/globals/render'
-import { DOMNode } from './src/models/DOMNode'
+import { React, ViewComponent } from '../src/class/React'
+import { render } from '../src/globals/render'
+import { DOMNode } from '../src/models/DOMNode'
 
 function TitleContent({ name = '' } = {}) {
     return (
