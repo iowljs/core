@@ -50,6 +50,7 @@ var OwlApp = /** @class */ (function () {
         var selector = this.appDetails.selector;
         var appcls = this.appDetails.name;
         var app = new appcls({});
+        app.selector = document.querySelector(selector);
         document.querySelector(selector)
             .appendChild(app.render());
     };
@@ -146,6 +147,12 @@ var ViewComponent = /** @class */ (function () {
     }
     ViewComponent.prototype.onEvent = function (event, details) { };
     ViewComponent.prototype.onUpdate = function (state) { };
+    ViewComponent.prototype.replaceOnSelector = function () {
+        if (typeof this.selector !== 'undefined') {
+            this.el = this.render();
+            this.selector.appendChild(this.el);
+        }
+    };
     ViewComponent.prototype.eventDidHappen = function (event, details) {
         if (typeof this.onEvent !== 'undefined') {
             this.onEvent(event, details);
@@ -239,6 +246,9 @@ var React = /** @class */ (function () {
             .map(function (child) { return typeof child === 'string' ? document.createTextNode(child) : child; })
             .forEach(function (child) { return element.appendChild(child); });
         return element;
+    };
+    React.prototype.getSelf = function () {
+        return React;
     };
     return React;
 }());
@@ -489,7 +499,6 @@ var test = /** @class */ (function (_super) {
     test.prototype.doTest = function (e) {
         var _this = this;
         var target = new DOMNode_1.DOMNode(e.target);
-        //target.innerHTML = 'test'
         this.setState(function (state) { return ({ blamessage: _this.makeId() }); });
         target.changeHTML(this.state.blamessage);
     };

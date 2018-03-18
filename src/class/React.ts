@@ -1,4 +1,5 @@
 import { IRenderEngine } from '../interfaces/IRenderEngine'
+import { IViewComponent } from '../interfaces/IViewComponent'
 import { EventWatcher } from './EventWatcher'
 
 function ObjectEntries(obj) {
@@ -11,10 +12,12 @@ function ObjectEntries(obj) {
     return resArray
 }
 
-export class ViewComponent {
+export class ViewComponent implements IViewComponent {
     public state: any;
     public static isClass: boolean = true;
     public EventWatcher: EventWatcher;
+    public selector: any;
+    public el: any;
     
     constructor(props) {
         this.state = this.mergeInitialState(props, {});
@@ -25,6 +28,13 @@ export class ViewComponent {
 
     onEvent(event: string, details: any) {}
     onUpdate(state: any): any {}
+
+    replaceOnSelector() {
+        if(typeof this.selector !== 'undefined') {
+            this.el = this.render()
+            this.selector.appendChild(this.el)
+        }
+    }
 
     eventDidHappen(event: string, details: any) {
         if( typeof this.onEvent !== 'undefined' ) {
@@ -123,5 +133,8 @@ export class React implements IRenderEngine { // our fake React class
             .forEach(child => element.appendChild(child));
 
         return element;
+    }
+    getSelf() {
+        return React;
     }
 }
