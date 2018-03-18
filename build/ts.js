@@ -2,18 +2,22 @@
 "use strict";
 exports.__esModule = true;
 var router_1 = require("./src/router/router");
+var State_1 = require("./src/class/State");
 /**
  * TEST CLASSES
  */
-var test_1 = require("./test");
+var EventWatcher_1 = require("./src/class/EventWatcher");
 /**
  * Export OwlApp class
  */
 var OwlApp = /** @class */ (function () {
     function OwlApp(appDetails) {
-        this.router = new router_1.Router;
+        this.EventWatcher = new EventWatcher_1.EventWatcher();
+        this.state = new State_1.State(this.EventWatcher);
+        this.router = new router_1.Router(this.EventWatcher);
         this.create(appDetails);
         this.setup();
+        this.router.bindHashChanges();
     }
     /**
      * Create an application
@@ -33,15 +37,74 @@ var OwlApp = /** @class */ (function () {
     /**
      * Setup the actual application now, trigger default render
      */
-    OwlApp.prototype.setup = function () { };
+    OwlApp.prototype.setup = function () {
+        if (this.appDetails.debugMode) {
+            console.log("/----------------\\");
+            console.log("/---- Owl.js ----\\");
+            console.log("/----------------\\");
+            console.log("Version " + (this.appDetails.version || '1'));
+        }
+        this.render();
+    };
+    OwlApp.prototype.render = function () {
+        var selector = this.appDetails.selector;
+        var appcls = this.appDetails.name;
+        var app = new appcls({});
+        document.querySelector(selector)
+            .appendChild(app.render());
+    };
     return OwlApp;
 }());
 exports.OwlApp = OwlApp;
-/** Simple JSx Test */
-var t = new test_1.test({});
-document.body.appendChild(t.render());
+var test_1 = require("./test");
+new OwlApp({
+    name: test_1.test,
+    selector: 'body',
+    debugMode: false,
+    version: '1.0.1-dev' // version code, optional
+});
 
-},{"./src/router/router":3,"./test":4}],2:[function(require,module,exports){
+},{"./src/class/EventWatcher":2,"./src/class/State":4,"./src/router/router":6,"./test":7}],2:[function(require,module,exports){
+"use strict";
+exports.__esModule = true;
+var EventWatcher = /** @class */ (function () {
+    function EventWatcher() {
+        this.events = [];
+    }
+    /**
+     * triggerEvent will trigger an event
+     * @param name The event name, matches the "trigger" column in IEvent (Array<IEvent>)
+     * @param details The details to supply to the closure
+     */
+    EventWatcher.prototype.triggerEvent = function (name, details) {
+        var event_did_fire_at_least_once = false;
+        var events = this.events;
+        var self = this;
+        events.forEach(function (event) {
+            if (event.trigger === name) {
+                event.closure(name, details);
+                event_did_fire_at_least_once = true;
+            }
+        }.bind(self, event_did_fire_at_least_once, name, details));
+        return event_did_fire_at_least_once;
+    };
+    /**
+     * addEventTrigger will push an event trigger onto the events stack
+     * @param trigger The event trigger string, ie router.routeChange
+     * @param closure The class handler to trigger when this event fires
+     */
+    EventWatcher.prototype.addEventTrigger = function (trigger, closure) {
+        this.events.push({
+            trigger: trigger,
+            closure: closure
+        });
+        return true;
+    };
+    return EventWatcher;
+}());
+exports.EventWatcher = EventWatcher;
+
+},{}],3:[function(require,module,exports){
 "use strict";
 var __assign = (this && this.__assign) || Object.assign || function(t) {
     for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -61,7 +124,17 @@ function ObjectEntries(obj) {
 var ViewComponent = /** @class */ (function () {
     function ViewComponent(props) {
         this.state = this.mergeInitialState(props, {});
+        this.onUpdate = this.onUpdate.bind(this);
+        this.onEvent = this.onEvent.bind(this);
+        this.eventDidHappen = this.eventDidHappen.bind(this);
     }
+    ViewComponent.prototype.onEvent = function (event, details) { };
+    ViewComponent.prototype.onUpdate = function (state) { };
+    ViewComponent.prototype.eventDidHappen = function (event, details) {
+        if (typeof this.onEvent !== 'undefined') {
+            this.onEvent(event, details);
+        }
+    };
     ViewComponent.prototype.mergeInitialState = function (props, state) {
         if (typeof props === 'undefined')
             return this.getInitialState();
@@ -81,10 +154,20 @@ var ViewComponent = /** @class */ (function () {
     ViewComponent.prototype.setState = function (handler) {
         if (typeof handler !== 'function') {
             this.state = __assign({}, this.state, handler);
+            if (typeof this.onUpdate !== 'undefined') {
+                this.onUpdate(this.state);
+            }
             return this.state;
         }
         this.state = handler(this.state);
+        if (typeof this.onUpdate !== 'undefined') {
+            this.onUpdate(this.state);
+        }
         return this.state;
+    };
+    ViewComponent.prototype.prerender = function () {
+        this.EventWatcher.addEventTrigger('controller.didChange', this.onEvent.bind(this));
+        this.EventWatcher.addEventTrigger('router.routeChange', this.onEvent.bind(this));
     };
     ViewComponent.prototype.render = function () {
         throw new ReferenceError("You must define your own render functions");
@@ -145,11 +228,132 @@ var React = /** @class */ (function () {
 }());
 exports.React = React;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
+"use strict";
+exports.__esModule = true;
+var State = /** @class */ (function () {
+    /**
+     * @param EventWatcher EventWatcher class, from Bootstrap
+     */
+    function State(EventWatcher) {
+        this.EventWatcher = EventWatcher;
+    }
+    /**
+     * @param key Key to search from state
+     */
+    State.prototype.getState = function (key) {
+        var state = this.state;
+        var state_result = null;
+        state.forEach(function (state_object) {
+            if (state_object.name === key) {
+                state_result = state_object.value;
+            }
+        }.bind(key, state_result));
+        return state_result;
+    };
+    /**
+     * @param key The key to update
+     * @param value The new value to assign
+     */
+    State.prototype.updateState = function (key, value) {
+        var state = this.state;
+        state.forEach(function (state_object) {
+            if (state_object.name === key) {
+                state_object.value = value;
+            }
+        });
+        return false;
+    };
+    /**
+     * @param key The key to assign
+     * @param value The value to assign for the key
+     */
+    State.prototype.setState = function (key, value) {
+        if (!this.updateState(key, value)) {
+            this.state.push({
+                name: key,
+                value: value
+            });
+        }
+        return true;
+    };
+    return State;
+}());
+exports.State = State;
+
+},{}],5:[function(require,module,exports){
+"use strict";
+exports.__esModule = true;
+var DOMNode = /** @class */ (function () {
+    function DOMNode(node) {
+        this.node = node;
+    }
+    /**
+     * @var selfHasNode void
+     */
+    DOMNode.prototype.selfHasNode = function () {
+        return typeof this.node !== 'undefined';
+    };
+    /**
+     * Change the text content of a selector node
+     * @var changeText void
+     * @param newText The new text to assign to the node
+     */
+    DOMNode.prototype.changeText = function (newText) {
+        if (this.selfHasNode()) {
+            this.node.innerText = newText;
+            return true;
+        }
+        return false;
+    };
+    /**
+     * Change the HTML content
+     * @param newHTML The HTML content to replace the existing with
+     */
+    DOMNode.prototype.changeHTML = function (newHTML) {
+        if (this.selfHasNode()) {
+            this.node.innerHTML = newHTML;
+            return true;
+        }
+        return false;
+    };
+    /**
+     * This accepts a className as a string, returns boolean
+     * @param className The class name to add to the selector
+     */
+    DOMNode.prototype.addClass = function (className) {
+        if (this.selfHasNode()) {
+            this.node.classList.add(className);
+            return true;
+        }
+        return false;
+    };
+    /**
+     * Hide accepts an optional parameter, called show, defaults to false (hide)
+     * @param show Should we show this selector?
+     */
+    DOMNode.prototype.hide = function (show) {
+        if (show === void 0) { show = false; }
+        if (show && this.selfHasNode()) {
+            this.node.classList.remove('owl-hide');
+            return true;
+        }
+        else if (!show && this.selfHasNode()) {
+            this.node.classList.add('owl-hide');
+            return false;
+        }
+        return false;
+    };
+    return DOMNode;
+}());
+exports.DOMNode = DOMNode;
+
+},{}],6:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
 var Router = /** @class */ (function () {
-    function Router() {
+    function Router(EventWatcher) {
+        this.EventWatcher = EventWatcher;
     }
     Router.prototype.setCurrentPath = function (path) {
         this.currentPath = path;
@@ -161,6 +365,9 @@ var Router = /** @class */ (function () {
     Router.prototype.setRoutes = function (RouteList) {
         this.routeList = RouteList;
         return true;
+    };
+    Router.prototype.bindHashChanges = function () {
+        document.addEventListener('hashchange', this.routeChangeEvent.bind(this));
     };
     /**
      * routeChangeEvent will trigger on hash change event on dom document
@@ -180,12 +387,28 @@ var Router = /** @class */ (function () {
         routes.forEach(function (route) {
             var path = route.path;
             if (path === controller) {
-                route.closure(method, data);
                 EventWatcher.triggerEvent('router.routeChange', {
                     controller: controller,
                     method: method,
                     data: data
                 });
+                var closure = route.closure;
+                if (typeof closure.eventDidHappen === 'undefined') {
+                    route.closure = new route.closure({
+                        method: method,
+                        data: data
+                    });
+                    closure = route.closure;
+                    closure.EventWatcher = this.EventWatcher;
+                    var html = closure.render(); // "*classname*.render()"
+                    this.coreSelector.innerHTML = "";
+                    this.coreSelector.appendChild(html);
+                    EventWatcher.triggerEvent('controller.didChange', {
+                        controller: controller,
+                        method: method,
+                        data: data
+                    });
+                }
             }
         }.bind(controller, method, data, EventWatcher));
         return true;
@@ -194,7 +417,7 @@ var Router = /** @class */ (function () {
 }());
 exports.Router = Router;
 
-},{}],4:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -208,6 +431,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 exports.__esModule = true;
 var React_1 = require("./src/class/React");
+var DOMNode_1 = require("./src/models/DOMNode");
 function TitleContent(_a) {
     var _b = (_a === void 0 ? {} : _a).name, name = _b === void 0 ? '' : _b;
     return (React_1.React.createElement("span", null,
@@ -216,23 +440,57 @@ function TitleContent(_a) {
 }
 var test = /** @class */ (function (_super) {
     __extends(test, _super);
-    function test() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function test(props) {
+        var _this = _super.call(this, props) || this;
+        _this.hasDonePreinit = false;
+        _this.doTest = _this.doTest.bind(_this);
+        return _this;
     }
     test.prototype.setBla = function () {
-        this.state.abloobla = 'Marissa';
+        this.state.abloobla = 'Smith, Bob';
+    };
+    test.prototype.setBlaMessage = function (message) {
+        this.state.blamessage = message || 'Click here';
+    };
+    test.prototype.preinit = function () {
+        if (this.hasDonePreinit)
+            return;
+        this.setBla();
+        this.setBlaMessage();
+        this.hasDonePreinit = true;
+    };
+    test.prototype.makeId = function () {
+        function makeid() {
+            var text = "";
+            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            for (var i = 0; i < 15; i++)
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+            return text;
+        }
+        return makeid();
+    };
+    test.prototype.onUpdate = function (state) { };
+    test.prototype.doTest = function (e) {
+        var _this = this;
+        var target = new DOMNode_1.DOMNode(e.target);
+        //target.innerHTML = 'test'
+        this.setState(function (state) { return ({ blamessage: _this.makeId() }); });
+        target.changeHTML(this.state.blamessage);
     };
     test.prototype.render = function () {
-        this.setBla();
-        return (React_1.React.createElement("div", null,
-            "Test! Hi ",
+        this.preinit();
+        this.el = (React_1.React.createElement("div", { "data-root": true },
+            "Test! A bloo bla is ",
             this.state.abloobla,
             "!",
             React_1.React.createElement("br", null),
-            React_1.React.createElement(TitleContent, { name: "Curtis Gervais" })));
+            React_1.React.createElement("button", { onClick: this.doTest }, this.state.blamessage),
+            React_1.React.createElement("br", null),
+            React_1.React.createElement(TitleContent, { name: "Bob Smith" })));
+        return this.el;
     };
     return test;
 }(React_1.ViewComponent));
 exports.test = test;
 
-},{"./src/class/React":2}]},{},[1]);
+},{"./src/class/React":3,"./src/models/DOMNode":5}]},{},[1]);

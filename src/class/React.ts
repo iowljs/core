@@ -1,4 +1,5 @@
 import { IRenderEngine } from '../interfaces/IRenderEngine'
+import { EventWatcher } from './EventWatcher'
 
 function ObjectEntries(obj) {
     var ownProps = Object.keys( obj ),
@@ -13,12 +14,17 @@ function ObjectEntries(obj) {
 export class ViewComponent {
     public state: any;
     public static isClass: boolean = true;
+    public EventWatcher: EventWatcher;
     
     constructor(props) {
         this.state = this.mergeInitialState(props, {});
+        this.onUpdate = this.onUpdate.bind(this)
+        this.onEvent = this.onEvent.bind(this)
+        this.eventDidHappen = this.eventDidHappen.bind(this)
     }
 
     onEvent(event: string, details: any) {}
+    onUpdate(state: any): any {}
 
     eventDidHappen(event: string, details: any) {
         if( typeof this.onEvent !== 'undefined' ) {
@@ -43,13 +49,30 @@ export class ViewComponent {
         return {};
     }
 
-    public setState(handler) {
+    public setState(handler: any) {
         if(typeof handler !== 'function') {
             this.state = { ...this.state, ...handler }
+            if(typeof this.onUpdate !== 'undefined') {
+                this.onUpdate(this.state)
+            }
             return this.state;
         }
         this.state = handler(this.state);
+        if(typeof this.onUpdate !== 'undefined') {
+            this.onUpdate(this.state)
+        }
         return this.state;
+    }
+
+    public prerender() {
+        this.EventWatcher.addEventTrigger(
+            'controller.didChange',
+            this.onEvent.bind(this)
+        )
+        this.EventWatcher.addEventTrigger(
+            'router.routeChange',
+            this.onEvent.bind(this)
+        )
     }
 
     public render() {

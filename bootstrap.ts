@@ -4,6 +4,7 @@
 import { DOMNode } from './src/models/DOMNode'
 import { Router } from './src/router/router'
 import { State } from './src/class/State'
+import { render } from './src/globals/render'
 
 /**
  * Import Interfaces
@@ -15,7 +16,6 @@ import { IRenderEngine } from './src/interfaces/IRenderEngine'
 /**
  * TEST CLASSES
  */
-import { test } from './test'
 import { EventWatcher } from './src/class/EventWatcher';
 
 /**
@@ -33,6 +33,7 @@ export class OwlApp implements IOwlApplication {
         this.router = new Router(this.EventWatcher);
         this.create(appDetails)
         this.setup()
+        this.router.bindHashChanges()
     }
     
     /**
@@ -75,3 +76,11 @@ export class OwlApp implements IOwlApplication {
             )
     }
 }
+
+import { test } from './test'
+new OwlApp({
+    name: test, // direct component
+    selector: 'body', // selector tag, ie 'body' or '#app'
+    debugMode: false, // enable for simple output in logs
+    version: '1.0.1-dev' // version code, optional
+})
